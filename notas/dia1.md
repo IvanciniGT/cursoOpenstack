@@ -546,3 +546,4 @@ Después Entraremos a fondo con Almacenamiento (Cinder, Swift, Glance)    (Jueve
 Después Entraremos a fondo con Redes (Neutron)    (Lunes/Martes)                            |   - horizon (interfaz gráfica)
 Después Entraremos a fondo con Nova                 (Miércoles)                             |   - plantillas de heat (IaC)
 Jueves: Orquestación (Heat) + otros
+    Terraform
