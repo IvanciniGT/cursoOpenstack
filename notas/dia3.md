@@ -277,3 +277,158 @@ Me muestra todo      Me vuelve a sacar todo!
 openstack project list:
 GET.      https://keystone.ivanosuna.com:443/v3/projects 
 GET       https://keystone.ivanosuna.com/v3/users/b2bb4fa595fb44fb9ce07a857e42993d/projects
+
+
+---
+
+# KEYSTONE
+
+- Gestión de Usuarios, Roles, grupos, dominios, proyectos, asignación de roles.
+
+# Almacenamiento
+
+## Ceph
+
+Ceph es un sistema de almacenamiento distribuido, que se puede usar para almacenar bloques, objetos y archivos.
+
+Los tipos de almacenamiento están ahí por un motivo. Depende el software que monte, así el tipo de almacenamiento que necesito usar.
+
+### Almacenamiento de bloques
+
+Es un tipo de almacenamiento que se presenta como un disco a la máquina (física o virtual) o un contenedor.
+La gestión del disco la hace el cliente (la máquina o el contenedor) que lo monta:
+- Particionado
+- Formateado
+- Montado
+
+Ejemplos de almacenamiento de bloques: iscsi, Fibre Channel
+
+### Almacenamiento de ficheros 
+
+Es un tipo de almacenamiento cuya gestión la hace el sistema de almacenamiento, y yo puedo montarla como una unidad de re / carpeta en mi máquina o contenedor.
+Ejemplos de almacenamiento de ficheros: NFS, SMB
+
+### Almacenamiento de objetos
+
+Es un tipo de almacenamiento basado en el modelo: SERVICIO DE ALMACENAMIENTO.
+Qué puedo guardar ahí? Lo que quiera... bytes.
+Y ese conjunto de bytes que mando, tiene un ID único, que es el que me devuelve el servicio de almacenamiento cuando le mando un objeto a guardar.
+Cuando quiero recuperar aquello, le digo al servicio de almacenamiento: "Dame el objeto con ID tal", y el servicio me lo devuelve.
+Como si fuera una BBDD simplona, pero sin SQL ni nada... solo con un ID.
+
+> En qué casos conviene usar uno u otro?
+
+>>BBDD? MariaDB Galera (cluster de mariadb para el backend del openstack.. quiero 3 instancias del mariadb)
+ 
+De bloques. A cada instancia de la BBDD le pongo un "disco"... y que guarde ahñi sus datos... 
+Me interesa que:
+- La BBDD pueda tener rápido acceso a los bytes... pero bytes a trozos. (Habrá un fichero enorme de BBDD) y la BBDD se encargará de leer o escribir trozos (páginas) dentro de ese fichero.
+- El archivo no es compartido.
+- No me interesan sobrecargas de protocolos raros ni nada.
+
+>> Cuándo me interesa un almacenamiento de archivos?
+
+Compartir archivos entre varias máquinas o contenedores.
+Quiero que varias máquinas o contenedores puedan acceder a los mismos archivos, y que el sistema de almacenamiento se encargue de gestionar el acceso concurrente a esos archivos.
+
+  X:\Multimedia\Peliculas\2024\Película1.mkv
+  X:\Multimedia\Peliculas\2024\Película2.mkv        Carpetas!
+  X:\Multimedia\Canciones\2024\Canción1.mp3
+
+>> Cuándo me interesa un almacenamiento de objetos?
+
+Cuando los datos no van estructurados (no es por dentro... sino por fuera!... no hay carpetas... puede haberlas.. pero es secundario.)
+
+Soy instagram, fb, twitter, wordpress.
+Necesito guardar una foto, relacionada con un post. Lo unico que quiero es un ID... para guardar y para sacar.
+No hay sobrecarga de otros conceptos.
+
+
+CEPH ofrece todos esos tipos de almacenamiento.
+Pero en realidad para CEPH, todo son objetos:
+- Un volumen / disco de bloques es un objeto          El objeto será Gigas, Teras
+- Un archivo de un sistema de archivos es un objeto   El objeto será Megas, Kbs
+- Un objeto de almacenamiento de objetos es un objeto El objeto será Megas, Kbs
+
+Usa una infraestructura hiperconvergente, donde el almacenamiento y el acceso a ese almacenamiento.
+Nos ofrece resiliencia, alta disponibilidad, escalabilidad, etc.
+
+CEPH usa el concepto de OSD (Object Storage Daemon), que es el proceso que se encarga de gestionar el almacenamiento de objetos sobre un dispositivo de almacenamiento (HDD, SSD, NVME, etc.) de un nodo.
+Cada dispositivo de almacenamiento que tengo, lo asigno a un OSD, y el OSD se encarga de gestionar ese dispositivo de almacenamiento.
+
+  Maquina 1
+    HDD1   -    OSD1
+    HDD2   -    OSD2
+    SSD1   -    OSD3
+  Maquina 2
+    HDD1   -    OSD4
+    HDD2 
+    SSD1
+  Maquina 3
+    HDD1
+    HDD2
+    SSD1
+    NVME1
+
+Esos OSDs los uso para guardar cosas o sacar cosas.
+
+Pero luego tiene otro concepto. El concepto de PG (Placement Group).
+Un PG es un grupo de objetos, que se asignan a un conjunto de OSDs.
+
+Cuando quiero guardar algo dentro de un CEPH lo guardo en un PG, y ese PG se encarga de gestionar el almacenamiento de ese objeto en los OSDs que tiene asignados.
+
+Cada cosa (fichero, disco, objeto) que guardo en CEPH se parte en trozos. Trozos pequeños (configurable)... y de cada trozo se guardan varias copias (replicas) en diferentes OSDs, para garantizar la disponibilidad y la resiliencia de los datos.
+
+Ese factor de replicación se define a nivel de cada PG.
+
+Qué ofrece esto...
+- El poder escribir un fichero en trozos sobre 40 HDD a la vez
+- El poder leer un fichero en trozos sobre 40 HDD a la vez
+
+El limitante aquí no suele ser la velocidad de los HDDs, sino la red.
+
+Pero si tengo una buena red (250 Gbps, 400 Gbps, etc.) puedo conseguir velocidades de lectura y escritura muy altas.
+Si la red es una mierduli (1G....) entonces el cuello de botella va a ser la red, y no los HDDs.
+En una red de 1G el máximo que puedo conseguir es 125 MB/s, menos de los que da un HDD rotacional de 5400 rpm.
+Pero si tengo una red de 250 Gbps, entonces el máximo que puedo conseguir es 31.25 GB/s, que es mucho más de lo que da un nvme.
+
+Lo que guardamos en los placement groups son objetos.
+Ceph ofrece 3 protocolos (gestionados por programas internos diferentes que tiene CEPH) para acceder a esos objetos:
+- RBD (Rados Block Device): Para acceder a los objetos como si fueran discos de bloques.
+- CephFS: Para acceder a los objetos como si fueran archivos de un sistema de archivos.
+- RGW (Rados Gateway): Para acceder a los objetos como si fueran objetos de almacenamiento de objetos.
+
+CEPH Es un proyecto OpenSource. Pero hay distros comerciales de CEPH, como Red Hat Ceph Storage, SUSE Enterprise Storage, etc.
+
+Esto no está pensado para tener 4 HDD. Esto está pensado para cantidades GIGANTES de almacenamiento.
+
+## Volviendo a Openstack
+
+Openstack está altamente vinculado a CEPH, y se puede usar CEPH como backend de almacenamiento para los servicios de Openstack.
+
+- Cinder (almacenamiento de bloques)
+  Realmente cinder no guarda nada... 
+  Solo me ofrece una capa de AUTOMATICAION/AUTOSERVICIO para crear y gestionar volúmenes de bloques sobre un CEPH (RBD).
+- Swift (almacenamiento de objetos)
+  Realmente swift no guarda nada... 
+  Solo me ofrece una capa de AUTOMATICAION/AUTOSERVICIO para crear y gestionar objetos de almacenamiento de objetos sobre un CEPH (RGW).
+- Manila (almacenamiento de archivos)
+  Realmente manila no guarda nada... 
+  Solo me ofrece una capa de AUTOMATICAION/AUTOSERVICIO para crear y gestionar sistemas de archivos sobre un CEPH (CephFS).
+
+- Glance (almacenamiento de imágenes)
+  Realmente glance no guarda nada... 
+  Solo me ofrece una capa de AUTOMATICAION/AUTOSERVICIO para crear y gestionar imágenes de máquinas virtuales sobre:
+  - Un CEPH (RGW)
+  - Swift (almacenamiento de objetos)
+  - Cinder (almacenamiento de bloques)
+
+- Nova (cómputo)
+  Para crear máquinas virtuales, necesita ESPACIO DE ALMACENAMIENTO.. aunque sean efímeras!
+  Puedo crearlas sobre el FS del nodo.
+  O puedo crearlas sobre CEPH (RBD).
+
+  Si las creo en el FS del nodo:
+  - No tengo posibilidad de migrar esa máquina virtual a otro nodo en caliente.
+    La migración se hace vía : Stop de la máquina virtual, mover el fichero de la máquina virtual al otro nodo (scp), y arrancar la máquina virtual en el otro nodo. 
+  - Si tengo un sistema de almacenamiento compartido entre los nodos como backend (CEPH), entonces puedo crear la máquina virtual sobre ese sistema de almacenamiento compartido, y entonces sí que puedo migrar la máquina virtual en caliente, sin necesidad de pararla, ni de mover ningún fichero, ni de nada... porque el sistema de almacenamiento compartido ya se encarga de que la máquina virtual esté disponible en todos los nodos.

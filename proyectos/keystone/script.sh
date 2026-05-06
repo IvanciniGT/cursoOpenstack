@@ -39,7 +39,7 @@ NUEVO_PROYECTO="proyecto-alumno15-cliente"
 USUARIO_MANAGER="alumno15-manager"
 USUARIO_OPERADOR="alumno15-operador"
 USUARIO_MONITORIZACION="alumno15-monitorizacion"
-PASSWORD="Pa$$w0rd"
+PASSWORD='Pa$$w0rd'
 
 
 
@@ -52,9 +52,11 @@ openstack domain create --description "Dominio del cliente de $USUARIO_ADMINISTR
 # - Crear un usuario en ese dominio                                           alumnoX-manager
 openstack user create --domain "$NUEVO_DOMINIO" --password "$PASSWORD" "$USUARIO_MANAGER"
 # - Le asignamos role manager al usuario alumnoX-manager en el dominio dominio-alumnoX-cliente
-
+openstack role add --domain "$NUEVO_DOMINIO" --user "$USUARIO_MANAGER" manager
 
 # Accedemos como usuario alumnoX-manager a nivel de ese dominio
+conectar_con_usuario "$USUARIO_MANAGER" "$PASSWORD" "$NUEVO_DOMINIO"
+ajustar_contexto_dominio "$NUEVO_DOMINIO"
 # - Creamos un proyecto llamado                                               proyecto-alumnoX-cliente
 # - Creamos un usuario para el dominio                                        alumnoX-operador
 # - Creamos un usuario para el dominio                                        alumnoX-monitorizacion
