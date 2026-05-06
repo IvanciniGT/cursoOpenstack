@@ -1,15 +1,18 @@
 
-Nombre completo 
-AIRAM AIRAM RODRIGUEZ OLIVA     alumno1
-ALEJANDRO LOSA GONZALEZ         alumno2
-RAUL GARCIA RODRIGO             alumno3
-VICTOR SANCHIDRIAN HERVAS       alumno13
-RODRIGO  SAN-JOSE-VICENTE       alumno4
-RAUL  BARRAJON MARTINEZ         alumno5
-RODRIGO  GARCIA CAMPOS          alumno6
-ISRAEL DOMINGUEZ OLIVA          alumno7
-ISIDORO  RUIZ SANCHEZ           alumno8
-IVAN  VIEDMA GONZALEZ           alumno9
-MARIO ROBERTO SILVA             alumno10
-CARLOS  DE RAMON GONZALEZ       alumno11
-VICTOR MORENO GUERRERO          alumno12
+Arturo      alumno1
+Carlos      alumno2
+Carmina     alumno3
+Daniel      alumno4
+David       alumno5
+Emilio      alumno6
+Fernando    alumno7
+Hernán      alumno8
+Joshua      alumno9
+Lydia       alumno10
+Miguel      alumno11
+Raul        alumno12
+
+Ivan        alumno15 
+dominio-alumnoX
+
+proyecto-alumnoX
