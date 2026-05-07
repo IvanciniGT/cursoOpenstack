@@ -1,0 +1,111 @@
+# Esta va a ser nuestra primera plantilla HOT (de HEAT) para crear un stack (DESPLIEGUE) en OpenStack.
+# Lo primero que tenemos que concoer para poder hacer esto es el ESQUEMA YAML DE HEAT.
+# Y lo divertido es que ESE ESQUEMA, ESTA VIVO!
+# Hay versiones! No jodas.. aquí tambien??? SI CLARO
+# El openstack de hace 5 años es el mismo de ahora? NO
+# Las cosas que podía crear hace 5 años son las mismas que ahora? ALGUNAS!
+# Pues el esquema de HEAT tendrá que ir evolucionado.
+
+heat_template_version: 2021-04-16
+
+# Eso condicionará el tipo de recursos que podremos declarar
+# las propiedades que podremos configurar para cada recurso
+# Y las funciones que puedo usar internas en la plantilla.
+# Funciones? Si... como las que uso en cualquier lenguaje de programación... 
+
+description: >
+  Plantilla para la creación de un dominio en keystone.
+  Asociado al dominio, existirán:
+     un usuario manager,
+     un proyecto inicial,
+     y dos usuarios para ese proyecto.
+  Uno de los usuarios tendrá el rol de reader, y el otro el rol de member.
+
+# Toda plantilla tendrá 3 bloques:
+
+## Los parametros con los que podré ejecutar la plantilla, para dar lugar a distintos despliegues
+## DATOS DE ENTRADA
+parameters:
+
+#   nombre_de_parametro:
+#     type: tipo_de_dato    # Puede ser : string, number, json, comma_delimited_list, boolean
+#     description: texto descriptivo de lo que es el parametro, para que el usuario se entere de lo que es el parametro, y sepa que valor darle.
+#     default: valor_por_defecto   # Si el usuario no da un valor, será usado este valor por defecto. No es obligatorio.
+
+  nombre_del_usuario_manager:
+    type:             string
+    description:      Nombre del usuario manager del dominio.
+    default:          manager
+
+  nombre_del_dominio:
+    type:             string
+    description:      Nombre del dominio a gestionar.
+
+# Así para cada parametro que quiera definir.
+
+## Los recursos que serán gestionados mediante esta plantilla
+## COMPORTAMIENTO
+
+# Este programa se ejecutará:
+#   openstack stack create -t script.yaml \
+#        --parameter nombre_del_usuario_manager=alumno15-manager \
+#        --parameter nombre_del_dominio=dominio-alumno15-cliente \
+#        despliegue-dominio-para-alumno15
+
+#   openstack stack create -t script.yaml \
+#        --parameter nombre_del_usuario_manager=Menchu \
+#        --parameter nombre_del_dominio=SistemaFacturacion \
+#        SistemaFacturacion
+
+resources:
+
+#  nombre_interno_al_script_de_un_recurso:
+#    type: tipo_de_recurso   # El tipo de recurso que quiero crear. 
+#                            # Por ejemplo, una máquina virtual, un dominio, un usuario, un proyecto, etc.
+#    properties:             # Las propiedades de configuración de ese recurso.
+#                            # Por ejemplo, el nombre del dominio, la descripción, etc.   
+#                            # El número de cpus... la RAM
+# Es decir... lo único que estoy deciendo es:
+#   "Sease un recurso de tipo dominio, con estas propiedades de configuración"
+# DECLARO UN DOMINIO... con que objetivo... MULTIPLE.
+# A veces para crearlo.. a veces para modificarlo... a veces para borrarlo.
+    el_dominio:               # Esto es un id interno del script.. que ahora después vemos para que vale
+        type:                 OS::Keystone::Domain
+        properties:
+          description:        Nuevo dominio para mi cliente
+          # enabled:            true es el valor por defecto.
+          name:               # Este nombre es el que tendrá el recurso en OPENSTACK
+            get_param:        nombre_del_dominio     # get_param es una FUNCION INTERNA DE HEAT,
+                                                     # que me permite obtener el valor de un parametro que se
+                                                     # le ha dado a la plantilla al ejecutarla.
+# Cojonudo... SEASE! 
+# YA.. y que ostias hago con eso? me preguntará HEAT.
+# Y yo ya se lo responderé:
+#       $ openstack stack create
+#                         ------
+# O quizás:
+#       $ openstack stack delete
+#                         ------
+# O quizás:
+#       $ openstack stack update
+#                         ------
+# Este comando que hacía?
+# Este comando creaba un dominio
+# openstack domain create --description "Dominio del cliente de $USUARIO_ADMINISTRADOR" "$NUEVO_DOMINIO"
+# openstack domain create --help
+# Y ese comando lo actualiza? si cambia por ejemplo la descripción? NO
+# Para eso necesitaría? Otro comando
+# Y lo borraría si ya no hace falta? NO... necesitaría otro comando
+
+# Crear un usuario en ese dominio                                           alumnoX-manager
+# openstack user create --domain "$NUEVO_DOMINIO" --password "$PASSWORD" "$USUARIO_MANAGER"
+
+
+
+## La información que quiero que me devuelva HEAT cuando la plantilla sea aplicada.
+## Por ejemplo, 
+## - Imaginad que defino un recurso de tipo MAQUINA VIRTUAL
+##   Qué me podría interesar que me devolviera HEAT al aplicar la plantilla: IP
+## - Por ejemplo: la password aleatoria que se ha generado para el usuario manager.
+## DATOS DE SALIDA
+outputs:

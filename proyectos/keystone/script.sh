@@ -80,11 +80,30 @@ PASSWORD='Pa$$w0rd'
 conectar_con_usuario "$USUARIO_ADMINISTRADOR" "$PASSWORD" "$DOMINIO_ADMINISTRADOR"
 ajustar_contexto_sistema
 # - Creamos un dominio llamado                                                dominio-alumnoX-cliente
+
+
 openstack domain create --description "Dominio del cliente de $USUARIO_ADMINISTRADOR" "$NUEVO_DOMINIO" 2>/dev/null \
-    && echo "Se ha creado: $NUEVO_DOMINIO" || echo "YA existe: $NUEVO_DOMINIO"
+    && echo "Se ha creado: $NUEVO_DOMINIO" 
+    || echo "YA existe: $NUEVO_DOMINIO"
+
 # - Crear un usuario en ese dominio                                           alumnoX-manager
 openstack user create --domain "$NUEVO_DOMINIO" --password "$PASSWORD" "$USUARIO_MANAGER" 2>/dev/null \
     && echo "Se ha creado: $USUARIO_MANAGER" || echo "YA existe: $USUARIO_MANAGER"
+
+# Lo que quiero conseguir es que:
+# Con independencia de cómo esté ahora mismo el cotarro,
+# que después de ejecutar lo que tenga aquí, el resultado sea:
+# Que exista un usuario con nombre: alumnoX-manager
+# En el dominio: dominio-alumnoX-cliente
+# Y que tenga la contraseña que le estoy pasando.
+
+# No se si existe ya
+# No se si no existe ya
+# No se si existe pero tiene otra contraseña
+# ME LA PELA ! No es mi problema!
+# NO QUIERO TENER UN SCRIPT CON 50 IFs PARA CUBRIR TODOS LOS CASOS POSIBLES
+# Y a la que me descuido, acabo con eso.
+
 # - Le asignamos role manager al usuario alumnoX-manager en el dominio dominio-alumnoX-cliente
 openstack role add --domain "$NUEVO_DOMINIO" --user "$USUARIO_MANAGER" manager 2>/dev/null \
     && echo "Se ha asignado: manager a $USUARIO_MANAGER en $NUEVO_DOMINIO" || echo "YA existe: rol manager en $USUARIO_MANAGER"
@@ -108,7 +127,7 @@ openstack role add --project "$NUEVO_PROYECTO" --user "$USUARIO_MONITORIZACION" 
 openstack role add --project "$NUEVO_PROYECTO" --user "$USUARIO_OPERADOR" member 2>/dev/null \
     && echo "Se ha asignado: member a $USUARIO_OPERADOR en $NUEVO_PROYECTO" || echo "YA existe: rol member en $USUARIO_OPERADOR"
 
-# Probais a conectaros con esos usuarios con scope de proyecto.
+# Probáis a conectaros con esos usuarios con scope de proyecto.
 conectar_con_usuario "$USUARIO_OPERADOR" "$PASSWORD" "$NUEVO_DOMINIO"
 ajustar_contexto_proyecto "$NUEVO_PROYECTO" "$NUEVO_DOMINIO"
 # - Y miro que puedo ver los datos del proyecto.
@@ -118,5 +137,3 @@ conectar_con_usuario "$USUARIO_MONITORIZACION" "$PASSWORD" "$NUEVO_DOMINIO"
 ajustar_contexto_proyecto "$NUEVO_PROYECTO" "$NUEVO_DOMINIO"
 # - Y miro que puedo ver los datos del proyecto.
 openstack project list --my-projects
-
-

@@ -1,0 +1,329 @@
+# YaML  - YAML ain't Markup Language
+
+# Es un lenguaje que ofrece una sintaxis alternativa a JSON o XML.
+# Nos sirve para estructurar información:
+# - Dar una configuración de un programa
+# - Dar una estructura a un documento
+# - Crear un script de automatización
+
+# YAML SE USA UN HUEVO!
+# Existe una spec, que ahora mismo está en v1.2.... es un puro.
+# Tiene muchas cosas que en la práctica usamos poco o nada.
+
+# Hoy en día muchísimos programas usan YAML para entrada de datos:
+# - Kubernetes (Archivos de manifiesto. Definir un entorno de producción)
+# - Ansible    (Playbooks. Crear scripts de automatización)
+# - Docker     (Docker Compose. Definir contenedors)
+# - GitHub/Gitlab (Definir pipelines de CI/CD)
+# - Ubuntu     (Toda la configuración de red, se hace con YAML: netplan)
+# - Las aplicaciones JAVA con Spring... su configuración se hace con YAML
+# - Y un largo etcétera...
+
+# Literalmente se ha comido a JSON.
+# La sintaxis de JSON es un subconjunto de YAML, así que "todo" JSON es YAML, pero no todo YAML es JSON.
+
+# La sintaxis de YAML está fuertemente inspirada en la sintaxis de Python
+---
+# En YAML podemos poner comentarios... ALELUYA !
+# Los comentarios, con la #... lo que hay detrás del # es un comentario, y no se procesa.
+# Puede aparecer a media linea, o al principio de la línea, o al final... donde quieras.
+---
+# Un archivo YAML puede contener varios documentos.
+# En JSON o XML, un archivo solo puede contener un documento.
+# --- Son la marca de inicio de documento.
+# Los ponemos siempre salvo en el primero.
+---
+# Un documento YAML es UN NODO
+# Y hay 2 tipos de nodos: ESCALARES y COLECCIONES
+---
+# Nodos escalares: Son valores sencillos, como un número, una cadena de texto, un booleano...
+---
+# Números
+43
+---
+-3.19
+---
+.Nan # .NAN .nan = Indefinido
+---
+-.Inf # .INF .inf = Infinito
+---
+# Valores lógicos: Verdadero falso:
+true # TRUE, True
+---
+false # FALSE, False
+---
+# Textos... LO MAS COMPLEJO DE YAML con diferencia!
+---
+Este "es un 'texto 
+escrito 
+
+e\n #YAML
+---
+"Este \"es un 'texto 
+escrito 
+
+e\\n #YAML"
+---
+'Este "es un ''texto 
+escrito 
+
+e\n #YAML'
+# El caracter de escape \ solo se interpreta como
+# caracter de escape entre comillas dobles
+#   \n    Salto de linea
+#   \t    Tabulador
+#   \r    Retorno de carro
+#   \\    Solo una contrabarra
+#   \"    "
+
+# Es un poco ocura lo de los textos... Simplemente son muchas reglas
+
+# Cómo lidiamos con esto: SIMPLE:
+# La sintaxis recomendada en YAML es siempre SIN COMILLAS
+# Solo pondré cominnas (de un tipo u otro) cuando no me quede más remedio:
+# Básicamente cuando tenga un #
+# O cuando un texto empiece por "" (cosas raras)
+
+# Y otra regla. SOLO SE USA ESTA SINTAXIS cuando tengo textos DE UNA LINEA.
+
+# Porque .. para textos de más de una linea, YAML ofrece otras 2 sintaxis:
+---
+# Literal
+|1+
+   Aqui escribo lo que me de la real gana
+   Que puede tener caracteres raros:
+      " # ' , \ : Y esto se resta tal cual
+
+   Los saltos de linea que ponga.
+   No cambia nada
+   Lo único que hace yaml al leer (parsear) este texto
+   Es descontar el sangrado de la primera linea al resto.
+
+
+---
+# Folded
+>
+   Escribo mi texto
+   Con caracteres raros "'#\:
+   
+   Saltos de linea.
+
+# YAML coge ese texto, no le cambia ni una coma (igual que literal)
+# Salvo los saltos de linea, que se reemplazan por espacios.
+# Esto lo usamos mucho, especialmente para comandos
+---
+> 
+   openstack role add 
+      --project "$NUEVO_PROYECTO" 
+      --user "$USUARIO_MONITORIZACION" 
+      reader 2>/dev/null 
+         && echo "Se ha asignado: reader a $USUARIO_MONITORIZACION en $NUEVO_PROYECTO" 
+         || echo "YA existe: rol reader en $USUARIO_MONITORIZACION"
+
+---
+# Tenemos muchos más nodos escalares, pero no los vamos a ver hoy:
+# - Valores nulos      ~
+# - Fechas y horas    2024-06-17T12:00:00Z      Formato ISO 8601
+# - Binarios            !!binary SGVsbG8gV29ybGQh       Base64
+
+---
+
+# Nodos de colección. Hay muchos tipos... os cuento 2:
+---
+# Listas ordenadas
+# Es una colección de nodos, en los que el orden importa.
+- Item1
+- 33
+-      True
+# En la sintaxis... despues del guión , tiene que haber al menos un espacio en blanco
+# Puedo tener datos de distintos tipos, como items de la lista... esto implica que incluso otras listas!
+---
+- item1
+- 33
+- false
+-
+   - subitem1
+   - subitem2
+   # Para tener una lista que sea un item de otra lista, simplemente la sangramos un poco más (al menos 1 espacio)
+   # A yaml le da igual con cuantos espacios sangre las sublistas.. lo único que me exige es que sea consistente en cada nivel
+---
+- item1
+- 33
+- false
+-  
+   - subitem1
+      - subitem1
+      - subitem3
+   - subitem3
+               - subitem1
+               - subitem3
+   # Esto es lo mismo que el ejemplo anterior
+
+# NOTA IMPORTANTE: YAML no usa el concepto de espacio en blanco... Usa el concepto de caracter "VACIO" o "BLANCO":
+# Realmente puedo usar espacios o puedo usar tabuladores. PERO OJO
+#  Si en una linea tengo 4 espacios y en otra 1 tabulador... aunque a la vista lo vea igual, para YAML no es lo mismo... y me va a dar un error de sintaxis.
+# NECESITAMOS un buen editor de texto para no joderla: Bloc de notas, VIM, VI, NANO...No sirve para YAML!
+# Yo uso VSCode... y cada tabulador es reemplazado en automatico por espacios en blanco. Cuantos? Lo que yo quiera
+---
+
+# Hay una sintaxis alternativa a las listas:
+- item1
+- 22
+- false
+---
+["item1", 22, false] # Corchetes y comas.     ESTO ES JSON... y además es YAML
+# ESTO SOLO ESTA POR COMPATIBILIDAD CON JSON... NO SE USA EN LA PRACTICA
+# NO ESTA NADA ACONSEJADA ESTA SINTAXIS:
+# - Es difícil de leer para un humano
+# - Dónde acabará este archivo? EN UN REPOSITORIO DE GIT!
+#   Y GIT(como otros sistemas de control de versiones) identifica cambios a nivel de LINEA.
+# Si tengo la lista metida en una única linea, si cambio un item, git me dirá que he cambiado la lista! pero me tocará buscar que leches he cambio dentro a MI!
+# Por contra, si tengo cada item en una linea, git me dirá que item concreto he cambiado, y me será mucho más fácil revisar el cambio.
+# Solo hay un caso legítimo de uso de esta sintaxis: LISTAS VACIAS
+---
+[]
+---
+# Mapas desordenados
+# Es una colección CLAVE: VALOR... donde cada dato es identificado por su clave, y el orden no importa.
+# En algunos lenguajes de programación se le conoce por: MAPA, DICCIONARIO, OBJETO, ARRAY ASOCIATIVO...
+clave1:              valor1
+otraclave2:          22
+yla3clave:           false
+---
+
+# NOTA... los items se consideran desordenados!
+clave1:             valor1
+clave2:             22
+clave3:             false
+---
+# Es lo mismo que:
+clave3:           false
+clave1:           valor1
+clave2:           22
+---
+# Para YAML eso es lo mismo
+# Puedo tener anidación aquñi también
+clave1:            texto
+clave2:            22
+clave3:            false
+clave4:
+   subclave1:       subvalor1
+   subclave2:       33
+   subclave3:       true
+clave5:
+   - subitem1
+   - subitem2
+clave6: 
+   - subitem1:
+                  - subsubitem1
+                  - subsubitem2
+   - subitem2
+# Respetando las mismas reglas de sangrado que en las listas, puedo tener mapas dentro de listas, y listas dentro de mapas... lo que me de la real gana!
+---
+# Este es el tipo de documento más habitual
+# NOTA: Hay una sintaxis alternativa a los mapas, que es la de las llaves y comas... pero no se usa en la práctica, así que ni la voy a mostrar
+{clave1: valor1, otraclave2: 22, yla3clave: false} # ESTO ES JSON... y además es YAML
+# ESTO SOLO ESTA POR COMPATIBILIDAD CON JSON... NO SE USA EN LA PRACTICA
+# NO ESTA NADA ACONSEJADA ESTA SINTAXIS:
+# - Es difícil de leer para un humano
+# - Dónde acabará este archivo? EN UN REPOSITORIO DE GIT!
+#   Y GIT(como otros sistemas de control de versiones) identifica cambios a nivel de LINEA.
+# Si tengo el mapa metido en una única linea, si cambio un item, git me dirá que he cambiado el mapa! pero me tocará buscar que leches he cambio dentro a MI!
+# Por contra, si tengo cada item en una linea, git me dirá que item concreto he cambiado, y me será mucho más fácil revisar el cambio.
+
+# Solo hay un caso legítimo de uso de esta sintaxis: MAPAS VACIOS
+---
+{}
+---
+# Y SE ACABÓ Con esto, no tenemos más de un 20% de la especificación... pero es lo que se usa el 99% de las veces.
+---
+ivan:
+   nombre:     Ivan
+   apellidos: 
+             - Sanchez
+             - Garcia
+   edad:       33
+   casado:     false
+   hijos:
+      - nombre: Lucia
+        edad:   3
+      - nombre: Mateo
+        edad:   1
+---
+# YAML es un lenguaje orientado a HUMANOS!
+# Que cualquiera pueda entrar y entender aquello.
+# Ese mismo ejemplo en json:
+#{
+#   "ivan": {
+#      "nombre": "Ivan",
+#      "apellidos": [
+#         "Sanchez",
+#         "Garcia"
+#      ],
+#      "edad": 33,
+#      "casado": false,
+#      "hijos": [
+#         {
+#            "nombre": "Lucia",
+#            "edad": 3
+#         },
+#         {
+#            "nombre": "Mateo",
+#            "edad": 1
+#         }
+#      ]
+#   }
+#}
+---
+# Si eso lo huciera escrito en XML, sería algo así:
+#<ivan>
+#   <nombre>Ivan</nombre>
+#   <apellidos>
+#      <apellido>Sanchez</apellido>
+#      <apellido>Garcia</apellido>
+#   </apellidos>
+#   <edad>33</edad>
+#   <casado>false</casado>
+#   <hijos>
+#      <hijo>
+#         <nombre>Lucia</nombre>
+#         <edad>3</edad>
+#      </hijo>
+#      <hijo>
+#         <nombre>Mateo</nombre>
+#         <edad>1</edad>
+#      </hijo>
+#   </hijos>
+#</ivan> 
+
+---
+
+# ESTO ES LA SINTAXIS que YAML ofrece, como alternativa a XML o JSON.
+# Ahora bien.
+# Cuando un programa decide usar YAML para que le entreguen datos, DEFINE UN ESQUEMA.
+# NOTA: Ese concepto no es nuevo... también tengo esquemas XML (XSD) y esquemas JSON (JSON Schema)
+
+# El esquema define qué estructura de datos concreta necesita el programa.
+# Me define:
+# Las claves que puedo usar (algunas obligatorias, otras opcionales)
+# Los valores que pueden tener esas claves (si son números, textos, booleanos...)
+
+# por ejemplo, para el caso de nuestra "persona" el esquema podría ser algo así:
+- A primer nivel tienes que poner el nombre de la persona, que es un texto
+- Dentro de cada persona, puedes poner las siguientes claves:
+   - nombre: texto obligatorio
+   - apellidos: lista de textos opcional
+   - edad: número opcional
+   - casado: booleano obligatorio
+   - hijos: 
+       lista de mapas opcional, donde cada mapa tiene que tener las claves:
+            - nombre: texto obligatorio
+            - edad: número obligatorio
+# Evidentemente no se escribe con esta sintaxis.. pero a nivel conceptual, esto es lo que el programa espera recibir... y si no se lo das, o se lo das mal, te va a dar un error de sintaxis.
+# CADA PROGRAMA DEFINE SU ESQUEMA.
+# - Kubernetes, tiene su esquema
+# - Ansible, tiene su esquema
+# - Docker, tiene su esquema
+# - GitHub/Gitlab, tienen su esquema
+# - Ubuntu, tiene su esquema
+# - HEAT, tiene su esquema

@@ -387,10 +387,10 @@ Qué ofrece esto...
 
 El limitante aquí no suele ser la velocidad de los HDDs, sino la red.
 
-Pero si tengo una buena red (250 Gbps, 400 Gbps, etc.) puedo conseguir velocidades de lectura y escritura muy altas.
+Pero si tengo una buena red (25 Gbps, 40 Gbps, etc.) puedo conseguir velocidades de lectura y escritura muy altas.
 Si la red es una mierduli (1G....) entonces el cuello de botella va a ser la red, y no los HDDs.
 En una red de 1G el máximo que puedo conseguir es 125 MB/s, menos de los que da un HDD rotacional de 5400 rpm.
-Pero si tengo una red de 250 Gbps, entonces el máximo que puedo conseguir es 31.25 GB/s, que es mucho más de lo que da un nvme.
+Pero si tengo una red de 25 Gbps, entonces el máximo que puedo conseguir es 3.125 GB/s, que es mucho más de lo que da un nvme.
 
 Lo que guardamos en los placement groups son objetos.
 Ceph ofrece 3 protocolos (gestionados por programas internos diferentes que tiene CEPH) para acceder a esos objetos:
