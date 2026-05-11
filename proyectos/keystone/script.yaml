@@ -37,6 +37,16 @@ parameters:
     description:      Nombre del usuario manager del dominio.
     default:          manager
 
+  nombre_del_usuario_operador:
+    type:             string
+    description:      Nombre del usuario operador del proyecto.
+    default:          operador
+
+  nombre_del_usuario_monitorizacion:
+    type:             string
+    description:      Nombre del usuario de monitorizacion del proyecto.
+    default:          monitorizacion
+
   nombre_del_dominio:
     type:             string
     description:      Nombre del dominio a gestionar.
@@ -97,8 +107,83 @@ resources:
 # Para eso necesitaría? Otro comando
 # Y lo borraría si ya no hace falta? NO... necesitaría otro comando
 
-# Crear un usuario en ese dominio                                           alumnoX-manager
-# openstack user create --domain "$NUEVO_DOMINIO" --password "$PASSWORD" "$USUARIO_MANAGER"
+    # Rol manager para el usuario manager en el dominio
+    rol_manager_en_dominio:
+      type: OS::Keystone::UserRoleAssignment
+      properties:
+        user:
+          get_resource: el_usuario_manager
+        roles:
+          - role: manager
+            domain:
+              get_resource: el_dominio
+
+    # Rol reader para el usuario monitorizacion en el proyecto
+    rol_reader_monitorizacion:
+      type: OS::Keystone::UserRoleAssignment
+      properties:
+        user:
+          get_resource: el_usuario_monitorizacion
+        roles:
+          - role: reader
+            project:
+              get_resource: el_proyecto
+
+    # Rol member para el usuario operador en el proyecto
+    rol_member_operador:
+      type: OS::Keystone::UserRoleAssignment
+      properties:
+        user:
+          get_resource: el_usuario_operador
+        roles:
+          - role: member
+            project:
+              get_resource: el_proyecto
+
+    # Proyecto en el dominio
+    el_proyecto:
+      type: OS::Keystone::Project
+      properties:
+        domain:
+          get_resource: el_dominio
+        description:
+          str_replace:
+            template: "Proyecto del cliente de USUARIO"
+            params:
+              USUARIO:
+                get_param: nombre_del_usuario_manager
+        name:
+          str_replace:
+            template: "proyecto-USUARIO-cliente"
+            params:
+              USUARIO:
+                get_param: nombre_del_usuario_manager
+
+    # Usuario operador
+    el_usuario_operador:
+      type: OS::Keystone::User
+      properties:
+        domain:
+          get_resource: el_dominio
+        name:
+          get_param: nombre_del_usuario_operador
+        password:
+          get_attr:
+            - password_aleatorio_operador
+            - value
+
+    # Usuario monitorizacion
+    el_usuario_monitorizacion:
+      type: OS::Keystone::User
+      properties:
+        domain:
+          get_resource: el_dominio
+        name:
+          get_param: nombre_del_usuario_monitorizacion
+        password:
+          get_attr:
+            - password_aleatorio_monitorizacion
+            - value
 
 
 
@@ -109,8 +194,32 @@ resources:
 ## - Por ejemplo: la password aleatoria que se ha generado para el usuario manager.
 ## DATOS DE SALIDA
 
-    password_aleatorio:         # El password es OTRO RECURSO DE MI INFRA! que declaro.
-      type:                     OS::Heat::RandomString   # En este caso un texto aleatorio generado por HEAT
+    password_aleatorio_manager:         
+      type:                     OS::Heat::RandomString   
+      properties:
+        length:                 16
+        character_classes:
+          - class:              lowercase
+            min:                1
+          - class:              uppercase
+            min:                1
+          - class:              digits
+            min:                1
+
+    password_aleatorio_operador:         
+      type:                     OS::Heat::RandomString   
+      properties:
+        length:                 16
+        character_classes:
+          - class:              lowercase
+            min:                1
+          - class:              uppercase
+            min:                1
+          - class:              digits
+            min:                1
+
+    password_aleatorio_monitorizacion:         
+      type:                     OS::Heat::RandomString   
       properties:
         length:                 16
         character_classes:
@@ -123,36 +232,15 @@ resources:
 
     el_usuario_manager:
         type: OS::Keystone::User
-        # depends_on: el_dominio   # Estamos diciendo que este recurso depende del recursp "el _dominio"...
-                                   # Y por ende... Cuando se creen, que se creará primero? El dominio
-                                   # Y cuando se borren? quién se borrará primero? El usuario
-                                      # USUARIO -> DOMINIO
-                                      # El usuario depende del dominio
-        # ESTO ES UNA MUY MUY MUY MALA PRACTICA Y NO SE HACE EN LA SANTA VIDA!                              
-        # NO ES NECESARIO EXPLICITAR LAS DEPENDENCIAS.
-        # DE HECHO HACERLO COMPLICA MUCHO EL DESARROLLO y EL MANTENIMIENTO DE ESTOS PROGRAMAS!
-        # HEAT es capaz de generar en automático EL GRAFO DE DEPENDENCIAS ENTRE RECURSOS.
-        # SIEMPRE Y CUANDO, le de pistas!
         properties:
           domain:       
-            # get_param:  nombre_del_dominio    # El dominio se rellena de? del parámetro
-              get_resource: el_dominio          # El dominio se rellena del recurso "el_dominio" que hemos declarado antes.
-              # Me permite referenciar un recurso definido en el script... por su ID INTERNO
-              # Ahora, no solo le he dicho a HEAT cual es el valor.
-              # Sino que he introducido ya la dependencia entre recursos.
-              # El recurso "el_usuario_manager" depende del recurso "el_dominio" 
-              # porque el dominio del usuario "el_usuario_manager" se rellena con el 
-              # valor del recurso "el_dominio"
+              get_resource: el_dominio
           name:         
             get_param:      nombre_del_usuario_manager
           password:     
-            # get_resource:   password_aleatorio         # Referencio al recurso.
-                                                        # Que según la docu, ya me devuelve el valor de la password aleatoria que se ha generado para el recurso "password_aleatorio"
-            # No obstante también me explican que lo puedo sacar el atributo value                                                        
-            get_attr:                                   # get_attr es otra función interna de HEAT, 
-                                                        # que me permite obtener un atributo de un recurso.
-              - password_aleatorio                      # El recurso del que quiero obtener el atributo
-              - value                                   # El atributo que quiero leer del recurso "password_aleatorio"
+            get_attr:                                   
+              - password_aleatorio_manager                      
+              - value
 
   
 # Va a funcionar tal como está ? cuando hagamos el poenstack create? 
@@ -167,15 +255,61 @@ outputs:
   #                se entere de lo que es el output, y sepa que valor va a recibir.
   #   value: valor que quiero que me devuelva HEAT al aplicar la plantilla.
 
-  password_del_usuario_admin:
+  password_del_usuario_manager:
     description: Password aleatorio generado para el usuario manager.
     value: 
       get_attr:
-        - password_aleatorio
+        - password_aleatorio_manager
         - value
+
+  password_del_usuario_operador:
+    description: Password aleatorio generado para el usuario operador.
+    value: 
+      get_attr:
+        - password_aleatorio_operador
+        - value
+
+  password_del_usuario_monitorizacion:
+    description: Password aleatorio generado para el usuario monitorizacion.
+    value: 
+      get_attr:
+        - password_aleatorio_monitorizacion
+        - value
+
+  dominio_creado:
+    description: ID del dominio creado.
+    value:
+      get_resource: el_dominio
+
+  proyecto_creado:
+    description: ID del proyecto creado.
+    value:
+      get_resource: el_proyecto
+
+  usuario_manager:
+    description: ID del usuario manager.
+    value:
+      get_resource: el_usuario_manager
+
+  usuario_operador:
+    description: ID del usuario operador.
+    value:
+      get_resource: el_usuario_operador
+
+  usuario_monitorizacion:
+    description: ID del usuario monitorizacion.
+    value:
+      get_resource: el_usuario_monitorizacion
 
   # Al ejecutar, me devolverá algo como esto:
   # - outputs:
-  #   - password_del_usuario_admin: "aB3dE5gH7jK9LmN"
+  #   - password_del_usuario_manager: "aB3dE5gH7jK9LmN"
+  #   - password_del_usuario_operador: "xY7zQ2rT5vW9mK3"
+  #   - password_del_usuario_monitorizacion: "sU4lP8nO1cE6dF2"
+  #   - dominio_creado: "xyz123..."
+  #   - proyecto_creado: "abc456..."
+  #   - usuario_manager: "def789..."
+  #   - usuario_operador: "ghi012..."
+  #   - usuario_monitorizacion: "jkl345..."
 
 # HEAT NO ESTA MAL.... Pero está a años luz de lo que lo que podemos hacer con TERRAFORM!
