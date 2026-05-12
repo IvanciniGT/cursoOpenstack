@@ -1,0 +1,29 @@
+
+parameters:
+  
+  nombre_de_la_red:                     red-del-proyecto
+
+  nombre_de_la_red_externa:             external
+
+  red_privada:
+    nombre:                             subnet-privada
+    rango:                              10.0.0.0/24
+    gateway:                            10.0.0.1
+    dhcp:                               true
+    dns:                                8.8.8.8
+  
+  red_expuesta:
+    nombre:                             subnet-expuesta
+    rango:                              10.1.0.0/24
+    gateway:                            10.1.0.1
+    dhcp:                               true
+    dns:                                8.8.8.8
+
+  nombre_del_router:                    el-router-del-proyecto
+
+
+
+  # openstack stack create -t script.yaml \
+  #            --environment entorno1.yaml \
+  #            nombre-del-stack
+

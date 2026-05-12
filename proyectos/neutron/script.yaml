@@ -2,39 +2,140 @@ heat_template_version: 2021-04-16
 
 description: >
   Plantilla para la creación de una infra de red para un proyecto.
-  Red, 2 subnets, router
+  Red, 2 subnets, router con conexion a internet
 
 parameters:
 
-  # Nombre de la red (red-del-proyecto) y de las subnets (subnet-privada, subnet-expuesta) y del router (el-router-del-proyecto)
-  # Rangos en las subnets 10.0.0.0/24 y 20.0.0.0/24
-  # dhcp SI
-
-
-
-
-  nombre_del_usuario_monitorizacion:
+  nombre_de_la_red:
     type:             string
-    description:      Nombre del usuario de monitorizacion del proyecto.
-    default:          monitorizacion
+    description:      Nombre de la red del proyecto.
+    default:          red-del-proyecto
+
+  nombre_del_router:
+    type:             string
+    description:      Nombre del router del proyecto.
+    default:          el-router-del-proyecto
+
+  nombre_de_la_red_externa:
+    type:             string
+    description:      Nombre de la red externa del proyecto.
+    default:          external
+
+  red_privada:
+    type:             json
+    description:      Nombre de la subnet privada del proyecto.
+    default:          subnet-privada
+
+  red_expuesta:
+    type:             json # JSON aqui no significa que sea exactamente JSON
+                           # De hecho, en el fichero lo voy a escribir en YAML
+                           # JSON lo entiendo más como un MAPA YAML.
+    description:      Nombre de la subnet expuesta del proyecto.
+    default:          subnet-expuesta
 
 resources:
 
-    el_dominio:               
-        type:                 OS::Keystone::Domain
+    la_red:               
+        type:                 OS::Neutron::Net
         properties:
-          description:        Nuevo dominio para mi cliente
           name:               
-            get_param:        nombre_del_dominio
+            get_param:        nombre_de_la_red
+
+    la_subnet_privada:
+        type:                 OS::Neutron::Subnet
+        properties:
+            name:
+              get_param:
+                            - red_privada
+                            - nombre
+            cidr:    
+              get_param:
+                            - red_privada
+                            - rango
+            gateway_ip:
+              get_param:
+                            - red_privada
+                            - gateway
+            enable_dhcp:
+              get_param:
+                            - red_privada
+                            - dhcp
+            dns_nameservers:
+              - get_param:
+                            - red_privada
+                            - dns
+            network:
+              get_resource:   la_red # Explicita la dependencia
+
+    la_subnet_expuesta:
+        type:                 OS::Neutron::Subnet
+        properties:
+            name:
+              get_param:
+                            - red_expuesta
+                            - nombre
+            cidr:    
+              get_param:
+                            - red_expuesta
+                            - rango
+            gateway_ip:
+              get_param:
+                            - red_expuesta
+                            - gateway
+            enable_dhcp:
+              get_param:
+                            - red_expuesta
+                            - dhcp
+            dns_nameservers:
+              - get_param:
+                            - red_expuesta
+                            - dns
+            network:
+              get_resource:   la_red # Explicita la dependencia
+
+    el_router_con_salida_a_internet:
+      type:                   OS::Neutron::Router
+      properties:
+        name: 
+          get_param:          nombre_del_router
+        external_gateway_info:
+          network:            
+            get_param:        nombre_de_la_red_externa
+
+    la_conexion_de_la_subnet_privada_al_router:
+      type:                   OS::Neutron::RouterInterface
+      properties:
+        router: 
+          get_resource:       el_router_con_salida_a_internet
+        subnet:
+          get_resource:       la_subnet_privada
+
+    la_conexion_de_la_subnet_expuesta_al_router:
+      type:                   OS::Neutron::RouterInterface
+      properties:
+        router: 
+          get_resource:       el_router_con_salida_a_internet
+        subnet:
+          get_resource:       la_subnet_expuesta
 
 outputs:
 
-  # Los IDs de los recursos que se creen
-  # ID de la network, de las subnets, del router 
-
-  password_del_usuario_manager:
-    description: Password aleatorio generado para el usuario manager.
+  id_de_la_red:
+    description:        ID de la red creada.
     value: 
-      get_attr:
-        - password_aleatorio_manager
-        - value
+      get_resource:     la_red
+
+  id_de_la_subnet_privada:
+    description:        ID de la subnet privada creada.
+    value:
+      get_resource:     la_subnet_privada
+  
+  id_de_la_subnet_expuesta:
+    description:        ID de la subnet expuesta creada.
+    value:
+      get_resource:     la_subnet_expuesta
+  
+  id_del_router:
+    description:        ID del router creado.
+    value:
+      get_resource:     el_router_con_salida_a_internet
