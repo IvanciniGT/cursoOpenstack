@@ -1,0 +1,34 @@
+heat_template_version: 2021-04-16
+
+description: >
+  Plantilla para la creación de un dominio en keystone.
+  Asociado al dominio, existirán:
+     un usuario manager,
+     un proyecto inicial,
+     y dos usuarios para ese proyecto.
+  Uno de los usuarios tendrá el rol de reader, y el otro el rol de member.
+
+parameters:
+
+  nombre_del_usuario_monitorizacion:
+    type:             string
+    description:      Nombre del usuario de monitorizacion del proyecto.
+    default:          monitorizacion
+
+resources:
+
+    el_dominio:               
+        type:                 OS::Keystone::Domain
+        properties:
+          description:        Nuevo dominio para mi cliente
+          name:               
+            get_param:        nombre_del_dominio
+
+outputs:
+
+  password_del_usuario_manager:
+    description: Password aleatorio generado para el usuario manager.
+    value: 
+      get_attr:
+        - password_aleatorio_manager
+        - value
