@@ -1,14 +1,17 @@
 heat_template_version: 2021-04-16
 
 description: >
-  Plantilla para la creación de un dominio en keystone.
-  Asociado al dominio, existirán:
-     un usuario manager,
-     un proyecto inicial,
-     y dos usuarios para ese proyecto.
-  Uno de los usuarios tendrá el rol de reader, y el otro el rol de member.
+  Plantilla para la creación de una infra de red para un proyecto.
+  Red, 2 subnets, router
 
 parameters:
+
+  # Nombre de la red (red-del-proyecto) y de las subnets (subnet-privada, subnet-expuesta) y del router (el-router-del-proyecto)
+  # Rangos en las subnets 10.0.0.0/24 y 20.0.0.0/24
+  # dhcp SI
+
+
+
 
   nombre_del_usuario_monitorizacion:
     type:             string
@@ -25,6 +28,9 @@ resources:
             get_param:        nombre_del_dominio
 
 outputs:
+
+  # Los IDs de los recursos que se creen
+  # ID de la network, de las subnets, del router 
 
   password_del_usuario_manager:
     description: Password aleatorio generado para el usuario manager.

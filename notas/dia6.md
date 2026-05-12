@@ -79,3 +79,17 @@ Porque no solo crean una infra o la actualizan... la curan!
 Puedo tener un sistema de monitorización.. que si detecta un problema, lo primero es pasar el script de IaC para curar la herida. Y si no se cura, entonces ya me pongo a investigar.
 
 Ese concepto de la idempotancia es fundamental. Es lo que hace que el IaC sea tan poderoso.
+
+
+---
+
+MODULARIZACION
+
+No quiero montar un megascript de HEAT / TERRAFORM.
+Prefiero montar 4 pequeños... que ya orquestaré.
+
+Script para crear dominio, usuarios, proyectos, roles -> ID de proyecto
+
+ID PROJECTO -> Script para redes, subnets, routers -> IDS SUBNETS / NETWORKS
+
+ID SUBNETS / NETWORKS -> Script para máquinas virtuales
