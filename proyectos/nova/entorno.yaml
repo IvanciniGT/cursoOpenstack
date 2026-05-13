@@ -1,9 +1,9 @@
 
 parameters:
 
-    claveSSH:         keypair-ivan
+    claveSSH:         keypair-ivan # CAMBIAR
     imagen_so:
-        nombre:       Imagen-Cirros-Alumno15
+        nombre:       Imagen-Cirros-Alumno15  # CAMBIAR
         url:          http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
         visibilidad:   public
     maquina1:
@@ -12,15 +12,15 @@ parameters:
     maquina2:
        nombre:       vm-mariadb
        flavor:       talla.mini
-       ip_fija:      10.20.0.5
+       ip_fija:      10.20.0.5          # CAMBIAR
     red:
-        id:         6595aef3-6368-40f5-8926-7c20656cce49
+        id:         6595aef3-6368-40f5-8926-7c20656cce49 # CAMBIAR
         subnetExpuesta:
-            id:         0ee1c610-f9cb-4fe4-a7b0-7586618dbe4f
-            cidr:       10.10.0.0/16
+            id:         0ee1c610-f9cb-4fe4-a7b0-7586618dbe4f # CAMBIAR
+            cidr:       10.10.0.0/16 # CAMBIAR
         subnetPrivada:
-            id:         974feace-7d34-4f63-8974-a86024a4d679
-            cidr:       10.20.0.0/16
+            id:         974feace-7d34-4f63-8974-a86024a4d679 # CAMBIAR
+            cidr:       10.20.0.0/16 # CAMBIAR
     redExterna:      
       nombre:        external
 
