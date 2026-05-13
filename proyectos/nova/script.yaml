@@ -1,0 +1,136 @@
+# Parametrización:
+
+parameters:
+
+  maquina1:
+    type:                 json
+    description:          Datos de la máquina 1 (NGINX)
+    # El valor no será un texto.. tendrá estructura de datos, por ejemplo:
+    # maquina1:
+    #   nombre:         "vm-nginx"
+    #   image:        "Cirros"
+    #   flavor:       "m1.tiny"
+    #   ...
+    # redExpuesta:
+    #     id:         
+    #     cidr:       10.10.0.0/24
+    # redPrivada:
+    #     id:         
+    #     cidr:       10.20.0.0/24
+# Nombres de las máquinas, url imagen, flavor, nombre de volumen, tamaño del volumen, etc.
+# IP FIJA
+
+resources:
+
+# Cargamos imagen CirrOS
+
+  security_group_maquina1:
+      type:                         OS::Neutron::SecurityGroup
+      properties:
+        name:
+          str_replace:
+              template:             sg-NOMBRE
+              params:
+                 NOMBRE:
+                    get_param:
+                                  - maquina1
+                                  - nombre
+        description: >  
+                                    Security group para la máquina 1 (que llevará NGINX).
+                                    Abre los puertos http, https, ssh y ICMP.
+        rules: 
+          - description:            El puerto HTTP
+            direction:              ingress
+            ethertype:              IPv4
+            port_range_min:         80
+            port_range_max:         80
+            protocol:               tcp
+            remote_ip_prefix:       0.0.0.0/0
+
+          - description:            El puerto HTTPS
+            direction:              ingress
+            ethertype:              IPv4
+            port_range_min:         443
+            port_range_max:         443
+            protocol:               tcp
+            remote_ip_prefix:       0.0.0.0/0
+
+          - description:            El puerto SSH
+            direction:              ingress
+            ethertype:              IPv4
+            port_range_min:         22
+            port_range_max:         22
+            protocol:               tcp
+            remote_ip_prefix:       0.0.0.0/0
+
+          - description:            El puerto ICMP
+            direction:              ingress
+            ethertype:              IPv4
+            protocol:               icmp
+            remote_ip_prefix:       0.0.0.0/0
+
+
+
+  security_group_maquina2:
+      type:                         OS::Neutron::SecurityGroup
+      properties:
+        name:
+          str_replace:
+              template:             sg-NOMBRE
+              params:
+                 NOMBRE:
+                    get_param:
+                                  - maquina2
+                                  - nombre
+        description: >  
+                                    Security group para la máquina 2 (que llevará MariaDB).
+                                    Abre los puertos ICMP y SSH y MARIADB (3306).
+                                    Solo se debe permitir tráfico desde el las ips en la red expuesta
+        rules: 
+          - description:            El puerto Mariadb
+            direction:              ingress
+            ethertype:              IPv4
+            port_range_min:         3306
+            port_range_max:         3306
+            protocol:               tcp
+            remote_ip_prefix:
+              get_param:
+                - redExpuesta
+                - cidr
+
+          - description:            El puerto SSH
+            direction:              ingress
+            ethertype:              IPv4
+            port_range_min:         22
+            port_range_max:         22
+            protocol:               tcp
+            remote_ip_prefix:
+              get_param:
+                - redExpuesta
+                - cidr
+
+          - description:            El puerto ICMP
+            direction:              ingress
+            ethertype:              IPv4
+            protocol:               icmp
+            remote_ip_prefix:
+              get_param:
+                - redExpuesta
+                - cidr
+
+# Floating IP para la VM1, pero no para la VM2
+
+# Volumen para la BBDD 5Gbs
+
+# Puertos
+  # Al definir explicitamente el puerto es cuando puedo aplicarle al puerto el SG, IP FIJA
+  #VM2 - IP Fija:      ?.?.0.5
+
+# 2 VMS
+
+## VM1: "NGINX"   <- red expuesta
+## VM2: "Mariadb" <- red privada
+
+
+
+outputs:
