@@ -1,16 +1,62 @@
-# Parametrización:
+heat_template_version: 2021-04-16
+
+description: >
+  Plantilla para la creación de dos máquinas virtuales, 
+  una con NGINX y otra con MariaDB.
+  Con sus respectivos puertos abiertos y una ip flotante para la máquina de NGINX.
 
 parameters:
 
   maquina1:
     type:                 json
     description:          Datos de la máquina 1 (NGINX)
-# Nombres de las máquinas, url imagen, flavor, nombre de volumen, tamaño del volumen, etc.
-# IP FIJA
+
+  maquina2:
+    type:                 json
+    description:          Datos de la máquina 2 (MariaDB)
+
+  claveSSH:
+    type:                 string
+    description:          Nombre del par de claves a usar para acceder a las máquinas
+
+  imagen_so:
+    type:                 json
+    description:          Datos de la imagen a usar para las máquinas
+
+  red:
+    type:                 json
+    description:          Datos de la red a usar para las máquinas
+
+  redExterna:
+    type:                 json
+    description:          Datos de la red externa a usar para las máquinas
 
 resources:
 
-# Cargamos imagen CirrOS
+  la_imagen_so:
+      type:                             OS::Glance::WebImage
+      properties:
+        name: 
+          get_param:
+                                      - imagen_so
+                                      - nombre
+
+        active:                         true
+        container_format:               bare
+        disk_format:                    qcow2
+        visibility: 
+          get_param:
+                                      - imagen_so
+                                      - visibilidad
+        location: 
+          get_param:
+                                      - imagen_so
+                                      - url
+
+        extra_properties:
+          os_distro:                    cirros
+          os_version:                   0.6.2
+          uso:                          labs
 
   security_group_maquina1:
       type:                         OS::Neutron::SecurityGroup
@@ -27,32 +73,28 @@ resources:
                                     Security group para la máquina 1 (que llevará NGINX).
                                     Abre los puertos http, https, ssh y ICMP.
         rules: 
-          - description:            El puerto HTTP
-            direction:              ingress
+          - direction:              ingress
             ethertype:              IPv4
             port_range_min:         80
             port_range_max:         80
             protocol:               tcp
             remote_ip_prefix:       0.0.0.0/0
 
-          - description:            El puerto HTTPS
-            direction:              ingress
+          - direction:              ingress
             ethertype:              IPv4
             port_range_min:         443
             port_range_max:         443
             protocol:               tcp
             remote_ip_prefix:       0.0.0.0/0
 
-          - description:            El puerto SSH
-            direction:              ingress
+          - direction:              ingress
             ethertype:              IPv4
             port_range_min:         22
             port_range_max:         22
             protocol:               tcp
             remote_ip_prefix:       0.0.0.0/0
 
-          - description:            El puerto ICMP
-            direction:              ingress
+          - direction:              ingress
             ethertype:              IPv4
             protocol:               icmp
             remote_ip_prefix:       0.0.0.0/0
@@ -73,38 +115,37 @@ resources:
                                     Abre los puertos ICMP y SSH y MARIADB (3306).
                                     Solo se debe permitir tráfico desde el las ips en la red expuesta
         rules: 
-          - description:            El puerto Mariadb
-            direction:              ingress
+          - direction:              ingress
             ethertype:              IPv4
             port_range_min:         3306
             port_range_max:         3306
             protocol:               tcp
             remote_ip_prefix:
               get_param:
-                                  - redExpuesta
+                                  - red
+                                  - subnetExpuesta
                                   - cidr
 
-          - description:            El puerto SSH
-            direction:              ingress
+          - direction:              ingress
             ethertype:              IPv4
             port_range_min:         22
             port_range_max:         22
             protocol:               tcp
             remote_ip_prefix:
               get_param:
-                                  - redExpuesta
+                                  - red
+                                  - subnetExpuesta
                                   - cidr
 
-          - description:            El puerto ICMP
-            direction:              ingress
+          - direction:              ingress
             ethertype:              IPv4
             protocol:               icmp
             remote_ip_prefix:
               get_param:
-                                  - redExpuesta
+                                  - red
+                                  - subnetExpuesta
                                   - cidr
 
-# Floating IP para la VM1, pero no para la VM2
   ip_flotante_maquina1:
     type:                           OS::Neutron::FloatingIP
     properties:
@@ -112,11 +153,17 @@ resources:
         get_param:
                                   - redExterna
                                   - nombre
+
+  asociacion_ip_flotante_maquina1: # Con esto lo que configuro es el NAT
+    type:                         OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: 
+        get_resource:             ip_flotante_maquina1
+      port_id: 
+        get_resource:             puerto_maquina1
+
 # Volumen para la BBDD 5Gbs
 
-# Puertos
-  # Al definir explicitamente el puerto es cuando puedo aplicarle al puerto el SG, IP FIJA
-  #VM2 - IP Fija:      ?.?.0.5
   puerto_maquina1:
     type:                           OS::Neutron::Port
     properties:
@@ -169,11 +216,53 @@ resources:
                                   - maquina2
                                   - ip_fija
 
-# 2 VMS
+  la_maquina1:
+    type:                           OS::Nova::Server
+    properties:
+      name:
+        get_param:
+                                  - maquina1
+                                  - nombre
+      image:
+        get_resource:               la_imagen_so
+      flavor: 
+        get_param:
+                                  - maquina1
+                                  - flavor
+      networks:
+        - port: 
+            get_resource:         puerto_maquina1
+      key_name:
+        get_param:                claveSSH
 
-## VM1: "NGINX"   <- red expuesta
-## VM2: "Mariadb" <- red privada
-
-
+  la_maquina2:
+    type:                           OS::Nova::Server
+    properties:
+      name:
+        get_param:
+                                  - maquina2
+                                  - nombre
+      image:
+        get_resource:               la_imagen_so
+      flavor: 
+        get_param:
+                                  - maquina2
+                                  - flavor
+      networks:
+        - port: 
+            get_resource:         puerto_maquina2
+      key_name:
+        get_param:                claveSSH
 
 outputs:
+
+  id_maquina1:
+    description:                Id de la máquina 1 (NGINX)
+    value:
+      get_resource:             la_maquina1
+  
+  id_maquina2:
+    description:                Id de la máquina 2 (MariaDB)
+    value:
+      get_resource:             la_maquina2
+
