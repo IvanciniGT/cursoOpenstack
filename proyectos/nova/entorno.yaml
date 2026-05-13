@@ -1,0 +1,22 @@
+
+parameters:
+
+    maquina1:
+       nombre:       "vm-nginx"
+    maquina2:
+       nombre:       "vm-mariadb"
+       ip_fija:      "10.20.0.5"
+    red:
+        id:         ?????
+        subnetExpuesta:
+            id:         ?????
+            cidr:       10.10.0.0/24
+        subnetPrivada:
+            id:         ?????
+            cidr:       10.20.0.0/24
+    redExterna:      
+      nombre:        external
+
+# openstack stack create \
+#  -t script.yaml \
+#  -e entorno.yaml \

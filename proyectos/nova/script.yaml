@@ -5,18 +5,6 @@ parameters:
   maquina1:
     type:                 json
     description:          Datos de la máquina 1 (NGINX)
-    # El valor no será un texto.. tendrá estructura de datos, por ejemplo:
-    # maquina1:
-    #   nombre:         "vm-nginx"
-    #   image:        "Cirros"
-    #   flavor:       "m1.tiny"
-    #   ...
-    # redExpuesta:
-    #     id:         
-    #     cidr:       10.10.0.0/24
-    # redPrivada:
-    #     id:         
-    #     cidr:       10.20.0.0/24
 # Nombres de las máquinas, url imagen, flavor, nombre de volumen, tamaño del volumen, etc.
 # IP FIJA
 
@@ -69,8 +57,6 @@ resources:
             protocol:               icmp
             remote_ip_prefix:       0.0.0.0/0
 
-
-
   security_group_maquina2:
       type:                         OS::Neutron::SecurityGroup
       properties:
@@ -95,8 +81,8 @@ resources:
             protocol:               tcp
             remote_ip_prefix:
               get_param:
-                - redExpuesta
-                - cidr
+                                  - redExpuesta
+                                  - cidr
 
           - description:            El puerto SSH
             direction:              ingress
@@ -106,8 +92,8 @@ resources:
             protocol:               tcp
             remote_ip_prefix:
               get_param:
-                - redExpuesta
-                - cidr
+                                  - redExpuesta
+                                  - cidr
 
           - description:            El puerto ICMP
             direction:              ingress
@@ -115,16 +101,73 @@ resources:
             protocol:               icmp
             remote_ip_prefix:
               get_param:
-                - redExpuesta
-                - cidr
+                                  - redExpuesta
+                                  - cidr
 
 # Floating IP para la VM1, pero no para la VM2
-
+  ip_flotante_maquina1:
+    type:                           OS::Neutron::FloatingIP
+    properties:
+      floating_network:
+        get_param:
+                                  - redExterna
+                                  - nombre
 # Volumen para la BBDD 5Gbs
 
 # Puertos
   # Al definir explicitamente el puerto es cuando puedo aplicarle al puerto el SG, IP FIJA
   #VM2 - IP Fija:      ?.?.0.5
+  puerto_maquina1:
+    type:                           OS::Neutron::Port
+    properties:
+      name:
+          str_replace:
+              template:             puerto-NOMBRE
+              params:
+                 NOMBRE:
+                    get_param:
+                                  - maquina1
+                                  - nombre 
+      network_id:
+        get_param:
+                                  - red
+                                  - id
+      fixed_ips:
+        - subnet:
+            get_param:
+                                  - red
+                                  - subnetExpuesta
+                                  - id
+      security_groups:
+        - get_resource:             security_group_maquina1  
+
+  puerto_maquina2:
+    type:                           OS::Neutron::Port
+    properties:
+      name:
+          str_replace:
+              template:             puerto-NOMBRE
+              params:
+                 NOMBRE:
+                    get_param:
+                                  - maquina2
+                                  - nombre 
+      network_id:
+        get_param:
+                                  - red
+                                  - id
+      security_groups:
+        - get_resource:             security_group_maquina2
+      fixed_ips:
+        - subnet:
+            get_param:
+                                  - red
+                                  - subnetPrivada
+                                  - id
+          ip_address:
+            get_param:
+                                  - maquina2
+                                  - ip_fija
 
 # 2 VMS
 
