@@ -131,12 +131,7 @@ resources:
             port_range_min:         22
             port_range_max:         22
             protocol:               tcp
-            remote_ip_prefix:
-              get_param:
-                                  - red
-                                  - subnetExpuesta
-                                  - cidr
-
+            remote_ip_prefix:       0.0.0.0/0
           - direction:              ingress
             ethertype:              IPv4
             protocol:               icmp
@@ -163,6 +158,31 @@ resources:
         get_resource:             puerto_maquina1
 
 # Volumen para la BBDD 5Gbs
+# Necesitamos crear el volumen:   OS::Cinder::Volume              tamaño
+# Y luego asociarlo a la máquina: OS::Cinder::VolumeAttachment    id del volumen y el id de la máquina
+  volumen_maquina2:
+    type:                 OS::Cinder::Volume
+    properties:
+      name:
+        str_replace:
+            template:             volumen-NOMBRE
+            params:
+               NOMBRE:
+                  get_param:
+                                    - maquina2
+                                    - nombre
+      size: 
+        get_param:
+                                  - maquina2
+                                  - volumen
+
+  asociacion_volumen_maquina2:
+    type:                 OS::Cinder::VolumeAttachment
+    properties:
+      volume_id:
+        get_resource:         volumen_maquina2
+      instance_uuid:
+        get_resource:         la_maquina2
 
   puerto_maquina1:
     type:                           OS::Neutron::Port

@@ -13,6 +13,7 @@ parameters:
        nombre:       vm-mariadb
        flavor:       talla.mini
        ip_fija:      10.20.0.5          # CAMBIAR
+       volumen:      10                 # CAMBIAR (GiB) 
     red:
         id:         6595aef3-6368-40f5-8926-7c20656cce49 # CAMBIAR
         subnetExpuesta:
